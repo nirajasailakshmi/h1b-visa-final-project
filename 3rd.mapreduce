@@ -1,0 +1,68 @@
+import java.io.IOException;
+
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+import java.util.TreeMap;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class soc_name3{
+
+public class MapClass extends Mapper<LongWritable,Text,Text,IntWritable>{
+	public void map(LongWritable key,Text value,Context context) throws IOException, InterruptedException{
+		String[] parts = value.toString().split("/t");
+		String industry = parts[2];
+		String job = parts[4];
+		int count = 1;
+		if(job.equals("\"DATA SCIENTIST\"")){
+			context.write(new Text(industry),new IntWritable(count));
+		}
+	}
+}
+
+public class ReduceClass extends Reducer<Text,IntWritable,NullWritable,Text>{
+	private TreeMap<Integer,Text> highest = new TreeMap<>();
+	public void reduce(Text key,Iterable<IntWritable> value,Context context) throws IOException, InterruptedException{
+		int count = 0;
+		for (IntWritable val:value){
+			count += val.get();
+		}
+		String output = key.toString()+","+count;
+		highest.put(count,new Text(output));
+		if(highest.size()>1){
+			highest.remove(highest.firstKey());
+		}
+	}
+	protected void cleanup(Context context) throws IOException, InterruptedException{
+		for(Text t:highest.values()){
+			context.write(NullWritable.get(),t);
+		}
+	}
+}
+
+	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException{
+		Configuration conf = new Configuration();
+		  conf.set("mapreduce.output.textoutputformat.separator", ",");
+		  Job job = Job.getInstance(conf, "h1b3");
+		  job.setJarByClass(soc_name3.class);
+		  job.setMapperClass(MapClass.class);
+		  job.setReducerClass(ReduceClass.class);
+          job.setMapOutputKeyClass(Text.class);
+		  job.setMapOutputValueClass(IntWritable.class);
+		  job.setOutputKeyClass(NullWritable.class);
+		  //job.setNumReduceTasks(0);
+		  //job.setCombinerClass(ReduceClass.class);
+		  job.setOutputValueClass(Text.class);
+		  job.setInputFormatClass(TextInputFormat.class);
+		  job.setOutputFormatClass(TextOutputFormat.class);
+		  FileInputFormat.addInputPath(job, new Path(args[0]));
+		  FileOutputFormat.setOutputPath(job, new Path(args[1]));
+		  System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+
+}
+
+3rd.txt
+
