@@ -1,0 +1,2 @@
+sqoop export --connect jdbc:mysql://localhost/employee --username root --password 'sairam' --table exportAns10 --update-mode allowinsert --update-key employee_id --export-dir /niit/employee.txt --input-fields-terminated-by '\t' ;
+
